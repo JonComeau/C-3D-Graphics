@@ -3,7 +3,7 @@ project(ThreeDee C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_library(threedee src/vector.c src/point.c)
+add_library(threedee src/vector.c src/point.c src/math.c src/matrix.c)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 

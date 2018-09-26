@@ -5,11 +5,7 @@
 
 typedef struct point3 {
     float x, y, z;
-} point3;
-
-typedef struct point2 {
-    float x, y;
-} point2;
+} point, *point, vertex, *vertex_ptr;
 
 vector3* vector3_from_points(point3* rhs, point3* lhs);
 
