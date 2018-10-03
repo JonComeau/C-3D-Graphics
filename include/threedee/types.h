@@ -49,7 +49,7 @@ typedef struct object_typ {
     int num_polys; // the number of polygons in the object
     polygon polys[MAX_POLYS_PER_OBJECT]; // the polygons of the object
     float radius; // the average radius of the object
-    int stats; // state of the object
+    int state; // state of the object
     point_3d world_pos; // position of the object in world coordinates
 } object, *object_ptr;
 
