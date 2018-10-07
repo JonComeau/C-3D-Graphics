@@ -1,6 +1,5 @@
 #ifdef _WIN32
 #include <windows.h>
-#include <d2d1.h>
 #endif
 #include "threedee/line.h"
 
