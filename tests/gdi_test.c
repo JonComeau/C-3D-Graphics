@@ -8,8 +8,7 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 		HINSTANCE hPrevInstance, // Always NULL for Win32
 		LPSTR lpCmdLine, // Command line arguments as single string (Not program name)
-		int nCmdShow) // Integer passed to ShowWindow()
-		{
+		int nCmdShow) {// Integer passed to ShowWindow()
 	WNDCLASSEX wc;
 	HWND hwnd;
 	MSG msg;
@@ -69,8 +68,21 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 }
 
 // The window procedure is called for each message
+// This is where all messages are handled
 LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch (msg) {
+		case WM_LBUTTONDOWN: {// Used when left button is pressed
+			char szFileName[MAX_PATH];
+			// NULL will return a handle to the file used to create the process
+			HINSTANCE hInstance = GetModuleHandle(NULL);
+			GetModuleFileName(hInstance, szFileName, MAX_PATH);
+			MessageBox(hwnd, szFileName, "This program is:", MB_OK | MB_ICONINFORMATION);
+			break;
+		}
+		case WM_RBUTTONDOWN: // Used when right button is pressed
+			break;
+		case WM_MBUTTONDOWN: // Used when middle button is pressed
+			break;
 		case WM_CLOSE: // Used when Close button or "Alt+F4"-like action received
 			DestroyWindow(hwnd);
 			break;
