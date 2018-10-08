@@ -1,14 +1,15 @@
-#ifdef _WIN32
+#ifdef WIN32
 #include <windows.h>
 
 const char g_szClassName[] = "myWindowClass";
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK AboutDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 		HINSTANCE hPrevInstance, // Always NULL for Win32
 		LPSTR lpCmdLine, // Command line arguments as single string (Not program name)
-		int nCmdShow) {// Integer passed to ShowWindow()
+		int nCmdShow) { // Integer passed to ShowWindow()
 	WNDCLASSEX wc;
 	HWND hwnd;
 	MSG msg;
@@ -20,13 +21,14 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 	wc.cbClsExtra = 0; // Amount of extra data allocated for this class
 	wc.cbWndExtra = 0; // Amount of extra data in memory
 	wc.hInstance = hInstance; // Handle to application instance
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION); // Icon (usually 32x32) when Alt+Tab pressed
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW); // Cursor that will be displayed
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // Background Brush to set the color of the window
 	wc.lpszMenuName = NULL; // Name of a menu resource to use for the windows with this class
 	wc.lpszClassName = g_szClassName; // Name to identify the class with
+    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION); // Icon (usually 32x32) when Alt+Tab pressed
 	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION); // Small (usually 16x16) icon to show in the taskbar and
 												  // top left corner of the window
+
 	if (!RegisterClassEx(&wc)) { // This checks for failure
 		MessageBox(NULL, // A handle to the owner window
 				   "Windows Registration Failed!", // Message to be displayed
@@ -41,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 			g_szClassName, // What class of window to create
 			"The title of my window", // Window title
 			WS_OVERLAPPEDWINDOW, // Window style parameter
-			CW_USEDEFAULT, CW_USEDEFAULT, 240, 120, // (startX, startY, width, height)
+			CW_USEDEFAULT, CW_USEDEFAULT, 240 * 3, 120 * 3, // (startX, startY, width, height)
 			NULL, // Parent window handle
 			NULL, // Menu handle
 			hInstance, // Application instance handle
@@ -69,29 +71,37 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 
 // The window procedure is called for each message
 // This is where all messages are handled
-LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch (msg) {
-		case WM_LBUTTONDOWN: {// Used when left button is pressed
-			char szFileName[MAX_PATH];
-			// NULL will return a handle to the file used to create the process
-			HINSTANCE hInstance = GetModuleHandle(NULL);
-			GetModuleFileName(hInstance, szFileName, MAX_PATH);
-			MessageBox(hwnd, szFileName, "This program is:", MB_OK | MB_ICONINFORMATION);
-			break;
-		}
-		case WM_RBUTTONDOWN: // Used when right button is pressed
-			break;
-		case WM_MBUTTONDOWN: // Used when middle button is pressed
-			break;
 		case WM_CLOSE: // Used when Close button or "Alt+F4"-like action received
 			DestroyWindow(hwnd);
-			break;
+		    break;
 		case WM_DESTROY: // Used when DestroyWindow() is used
 			PostQuitMessage(0);
-			break;
+		    break;
 		default:
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 	return 0;
+}
+
+BOOL CALLBACK AboutDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_INITDIALOG:
+            return TRUE;
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+                case IDOK:
+                    EndDialog(hwnd, IDOK);
+                    break;
+                case IDCANCEL:
+                    EndDialog(hwnd, IDCANCEL);
+                    break;
+            }
+            break;
+        default:
+            return FALSE;
+    }
+    return TRUE;
 }
 #endif
