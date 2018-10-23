@@ -1,10 +1,11 @@
 #ifdef WIN32
 #include <windows.h>
+#include "threedee/bitmap.h"
 
 const char g_szClassName[] = "myWindowClass";
+const int width = 1280, height = 720;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK AboutDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 		HINSTANCE hPrevInstance, // Always NULL for Win32
@@ -16,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 
 	// Step 1: Registering the Window Class
 	wc.cbSize = sizeof(WNDCLASSEX); // The size of the structure
-	wc.style = 0; // Class Styles (CS_*)
+	wc.style = CS_HREDRAW | CS_VREDRAW; // Class Styles (CS_*)
 	wc.lpfnWndProc = WndProc; // Pointer to the window procedure
 	wc.cbClsExtra = 0; // Amount of extra data allocated for this class
 	wc.cbWndExtra = 0; // Amount of extra data in memory
@@ -43,7 +44,7 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 			g_szClassName, // What class of window to create
 			"The title of my window", // Window title
 			WS_OVERLAPPEDWINDOW, // Window style parameter
-			CW_USEDEFAULT, CW_USEDEFAULT, 240 * 3, 120 * 3, // (startX, startY, width, height)
+			CW_USEDEFAULT, CW_USEDEFAULT, width, height, // (startX, startY, width, height)
 			NULL, // Parent window handle
 			NULL, // Menu handle
 			hInstance, // Application instance handle
@@ -72,36 +73,53 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 // The window procedure is called for each message
 // This is where all messages are handled
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HBITMAP hBitmap;
+    static HDC hdcMem;
+    static int cxBitmap, cyBitmap, cxClient, cyClient;
+    HDC hdc;
+    PAINTSTRUCT ps;
+
 	switch (msg) {
-		case WM_CLOSE: // Used when Close button or "Alt+F4"-like action received
-			DestroyWindow(hwnd);
-		    break;
+	    case WM_CREATE:
+	        break;
+	    case WM_SIZE:
+	        cxClient = LOWORD(lParam);
+	        cyClient = HIWORD(lParam);
+	        break;
+	    case WM_PAINT:
+            hdc = GetDC(hwnd);
+            hdcMem = CreateCompatibleDC(hdc);
+            hdc = BeginPaint(hwnd, &ps);
+
+            bitmap bitmap;
+            create_bitmap(&bitmap, 2, 2);
+            bitmap.data[0] = (rgba){0,   0,   255, 1};
+            bitmap.data[1] = (rgba){255, 255, 255, 1};
+            bitmap.data[2] = (rgba){255, 0,   0,   1};
+            bitmap.data[3] = (rgba){0,   255, 0,   1};
+            // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
+            BITMAP bm = {0, bitmap.width, bitmap.height, bitmap.height * 4, 1, 32};
+
+            bm.bmBits = bitmap.data;
+            hBitmap = CreateBitmapIndirect(&bm);
+            cxBitmap = bm.bmWidth;
+            cyBitmap = bm.bmHeight;
+            SelectObject(hdcMem, hBitmap);
+
+            StretchBlt(hdc, 0, 0, cxClient, cyClient,
+                       hdcMem, 0, 0, cxBitmap, cyBitmap, SRCCOPY);
+
+	        EndPaint(hwnd, &ps);
+            break;
 		case WM_DESTROY: // Used when DestroyWindow() is used
+            DeleteDC(hdcMem);
+            ReleaseDC(hwnd, hdc);
+		    DeleteObject(hBitmap);
 			PostQuitMessage(0);
 		    break;
 		default:
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 	return 0;
-}
-
-BOOL CALLBACK AboutDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_INITDIALOG:
-            return TRUE;
-        case WM_COMMAND:
-            switch (LOWORD(wParam)) {
-                case IDOK:
-                    EndDialog(hwnd, IDOK);
-                    break;
-                case IDCANCEL:
-                    EndDialog(hwnd, IDCANCEL);
-                    break;
-            }
-            break;
-        default:
-            return FALSE;
-    }
-    return TRUE;
 }
 #endif
