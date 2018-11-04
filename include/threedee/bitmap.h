@@ -11,9 +11,10 @@ typedef struct rgba_typ {
 typedef struct bitmap_typ {
     int width;
     int height;
+    int bpp;
     rgba *data;
 } bitmap, *pbitmap;
 
-int create_bitmap(pbitmap self, int width, int height);
+int create_bitmap(pbitmap self, int width, int height, int bpp);
 
 #endif //THREEDEE_BITMAP_H
