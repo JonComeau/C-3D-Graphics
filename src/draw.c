@@ -1,36 +1,27 @@
-#include <stdio.h>
 #include "threedee/draw.h"
+#include "threedee/matrix.h"
 
-void draw_object_wire(object_ptr object) {
-    int curr_poly, // the current polygon
-        curr_vert, // The current vertex
-        vert; // Vertex index
-    float x1, x2, y1, y2, z1, z2; // Working vars
-    int ix1, ix2, iy1, iy2; // ints used to hold screen
+matrix_4x4 model_view;
+matrix_4x4 viewport;
+matrix_4x4 projection;
 
-    for (curr_poly = 0; curr_poly < object->num_polys; curr_poly++) {
-        // is the poly visible
-        if (object->polys[curr_poly].visible == 0 ||
-            object->polys[curr_poly].clipped)
-            continue;
+void set_viewport(int x, int y, int w, int h) {
+    mat_identity_4x4(viewport);
+    viewport[0][3] = x + w / 2.f;
+    viewport[1][3] = y + h / 2.f;
+    viewport[2][3] = 1.f;
+    viewport[0][0] = w / 2.f;
+    viewport[1][1] = h / 2.f;
+    viewport[2][2] = 0;
+}
 
-        printf("\nPolygon #%d", curr_poly);
-        for (curr_vert = 0; curr_vert < object->polys[curr_poly].num_points - 1; curr_vert++) {
-            // extract two endpoints
-            vert = object->polys[curr_poly].vertex_list[curr_vert];
+void set_projection(float coeff) {
+    mat_identity_4x4(projection);
+    projection[3][2] = coeff;
+}
 
-            x1 = object->vertices_camera[vert].x;
-            y1 = object->vertices_camera[vert].y;
-            z1 = object->vertices_camera[vert].z;
-
-            vert = object->polys[curr_poly].vertex_list[curr_vert + 1];
-
-            x2 = object->vertices_camera[vert].x;
-            y2 = object->vertices_camera[vert].y;
-            z2 = object->vertices_camera[vert].z;
-
-            // convert coordinates
-            //x1 = (HALF_SCREEN_WIDTH + x1 * viewing_distance / z1);
-        }
-    }
+void lookat(vec3f eye, vec3f center, vec3f up) {
+    vec3f x, y, z;
+    matrix_4x4 minv, tr;
+    z = vec3f_normalize(vec3f_sub(eye, center));
 }
