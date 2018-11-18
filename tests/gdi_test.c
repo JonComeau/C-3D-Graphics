@@ -93,10 +93,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
             bitmap bitmap;
             create_bitmap(&bitmap, 2, 2, 32);
-            bitmap.data[0] = (rgba){0,   0,   255, 1};
-            bitmap.data[1] = (rgba){255, 255, 255, 1};
-            bitmap.data[2] = (rgba){255, 0,   0,   1};
-            bitmap.data[3] = (rgba){0,   255, 0,   1};
+            bitmap.data[0] = (color){0,   0,   255, 1};
+            bitmap.data[1] = (color){255, 255, 255, 1};
+            bitmap.data[2] = (color){255, 0,   0,   1};
+            bitmap.data[3] = (color){0,   255, 0,   1};
             // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
             BITMAP bm = {0, bitmap.width, bitmap.height, bitmap.width * 4, 1, (WORD) bitmap.bpp};
 

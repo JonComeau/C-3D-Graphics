@@ -54,19 +54,6 @@ void mat_print_4x4(matrix_4x4 a) {
     printf("\n");
 }
 
-// this function prints out a 1x4 matrix
-void mat_print_1x4(matrix_1x4 a) {
-    int column;
-
-    printf("\n");
-
-    for (column = 0; column < 4; column++) {
-        printf("%f ", a[column]);
-    }
-
-    printf("\n");
-}
-
 // This function multiplies a 4x4 be a 4x4 and stores the result in 4x4
 void mat_mul_4x4_4x4(matrix_4x4 a, matrix_4x4 b, matrix_4x4 result) {
     int index_i, index_j, index_k;
@@ -79,20 +66,6 @@ void mat_mul_4x4_4x4(matrix_4x4 a, matrix_4x4 b, matrix_4x4 result) {
                 sum += a[index_i][index_k] * b[index_k][index_j];
                 result[index_i][index_j] = sum;
             }
-        }
-    }
-}
-
-// This function multiplies a 4x4 be a 4x4 and stores the result in 4x4
-void mat_mul_1x4_4x4(matrix_1x4 a, matrix_4x4 b, matrix_1x4 result) {
-    int index_j, index_k;
-    float sum;
-
-    for (index_j = 0; index_j < 4; index_j++) {
-        sum = 0;
-        for (index_k = 0; index_k < 4; index_k++) {
-            sum += a[index_k] * b[index_k][index_j];
-            result[index_j] = sum;
         }
     }
 }
