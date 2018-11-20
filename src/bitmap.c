@@ -14,12 +14,6 @@ int create_bitmap(pbitmap self, int width, int height, int bytes_pp) {
 
     for (index = 0; index < width * height; index++) {
         self->data[index].rgba.a = 255;
-        if (index < 50)
-            printf("r: %i, g: %i, b: %i, a:%i\n",
-                   self->data[index].rgba.r,
-                   self->data[index].rgba.g,
-                   self->data[index].rgba.b,
-                   self->data[index].rgba.a);
     }
 
     return (self->data) ? 1 : 0;
@@ -44,8 +38,8 @@ char flip_vert(pbitmap self) {
     half = self->height >> 1;
 
     for (index = 0; index < half; index++) {
-        l1 = index * bytes_per_line;
-        l2 = (self->height - 1 - index) * bytes_per_line;
+        l1 = index;
+        l2 = self->height - 1 - index;
         memmove((void *)line,            (void *)(self->data+l1), bytes_per_line);
         memmove((void *)(self->data+l1), (void *)(self->data+l2), bytes_per_line);
         memmove((void *)(self->data+l2), (void *)line,            bytes_per_line);

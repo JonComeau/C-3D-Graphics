@@ -33,7 +33,7 @@
  */
 
 const char g_szClassName[] = "myWindowClass";
-const int width = 1280, height = 720;
+const int width = 800, height = 800;
 
 color white = {255, 255, 255, 255};
 color red = {255, 0, 0, 255};
@@ -43,89 +43,9 @@ vec3f EYE =       {1, 1, 3};
 vec3f CENTER =    {0, 0, 0};
 vec3f UP =        {0, 1, 0};
 
-void set_object(object_ptr obj) {
-    int index;
-
-    printf("Allocate space for verts\n");
-    obj->vert_count = 8;
-    obj->verts = malloc(obj->vert_count * sizeof(vec3f));
-    if (!obj->verts) {
-        fprintf(stderr, "Verts could not be allocated\n");
-        return;
-    }
-
-    printf("\nStart setting vertices\n");
-    obj->verts[0].x = 0.0f; obj->verts[0].y = 0.0f; obj->verts[0].z = 0.0f;
-    obj->verts[1].x = 0.0f; obj->verts[1].y = 0.0f; obj->verts[1].z = 1.0f;
-    obj->verts[2].x = 0.0f; obj->verts[2].y = 1.0f; obj->verts[2].z = 0.0f;
-    obj->verts[3].x = 0.0f; obj->verts[3].y = 1.0f; obj->verts[3].z = 1.0f;
-    obj->verts[4].x = 1.0f; obj->verts[4].y = 0.0f; obj->verts[4].z = 0.0f;
-    obj->verts[5].x = 1.0f; obj->verts[5].y = 0.0f; obj->verts[5].z = 1.0f;
-    obj->verts[6].x = 1.0f; obj->verts[6].y = 1.0f; obj->verts[6].z = 0.0f;
-    obj->verts[7].x = 1.0f; obj->verts[7].y = 1.0f; obj->verts[7].z = 1.0f;
-
-    for (index = 0; index < obj->vert_count; index++) {
-        printf("\tv %4.2f %4.2f %4.2f\n",
-               obj->verts[index].x,
-               obj->verts[index].y,
-               obj->verts[index].z);
-
-        obj->verts[index].x *= .2;
-        obj->verts[index].y *= .2;
-        obj->verts[index].z *= .2;
-    }
-
-    printf("\nAllocate space for faces\n");
-    obj->face_count = 12;
-    obj->faces = malloc(obj->face_count * sizeof(face));
-    if (!obj->faces) {
-        fprintf(stderr, "Faces could not be allocated\n");
-        return;
-    }
-
-    printf("Start setting faces\n");
-    obj->faces[0].ind1 =  1; obj->faces[0].ind2 =  7; obj->faces[0].ind3 =  5;
-    obj->faces[1].ind1 =  1; obj->faces[1].ind2 =  3; obj->faces[1].ind3 =  7;
-    obj->faces[2].ind1 =  1; obj->faces[2].ind2 =  4; obj->faces[2].ind3 =  3;
-    obj->faces[3].ind1 =  1; obj->faces[3].ind2 =  2; obj->faces[3].ind3 =  4;
-    obj->faces[4].ind1 =  3; obj->faces[4].ind2 =  8; obj->faces[4].ind3 =  7;
-    obj->faces[5].ind1 =  3; obj->faces[5].ind2 =  4; obj->faces[5].ind3 =  8;
-    obj->faces[6].ind1 =  5; obj->faces[6].ind2 =  7; obj->faces[6].ind3 =  8;
-    obj->faces[7].ind1 =  5; obj->faces[7].ind2 =  8; obj->faces[7].ind3 =  6;
-    obj->faces[8].ind1 =  1; obj->faces[8].ind2 =  5; obj->faces[8].ind3 =  6;
-    obj->faces[9].ind1 =  1; obj->faces[9].ind2 =  6; obj->faces[9].ind3 =  2;
-    obj->faces[10].ind1 = 2; obj->faces[10].ind2 = 6; obj->faces[10].ind3 = 8;
-    obj->faces[11].ind1 = 2; obj->faces[11].ind2 = 8; obj->faces[11].ind3 = 4;
-
-    for (index = 0; index < obj->face_count; index++) {
-        printf("\tf %i %i %i\n",
-               obj->faces[index].ind1,
-               obj->faces[index].ind2,
-               obj->faces[index].ind3);
-    }
-
-    printf("\nTest vertex from face\n");
-    for (index = 0; index < obj->face_count; index++) {
-        printf("index: %i\n", index);
-        printf("\t%i:\tv %.2f %.2f %.2f\n",
-               obj->faces[index].ind1,
-               obj->verts[obj->faces[index].ind1-1].x,
-               obj->verts[obj->faces[index].ind1-1].y,
-               obj->verts[obj->faces[index].ind1-1].z);
-        printf("\t%i:\tv %.2f %.2f %.2f\n",
-               obj->faces[index].ind2,
-               obj->verts[obj->faces[index].ind2-1].x,
-               obj->verts[obj->faces[index].ind2-1].y,
-               obj->verts[obj->faces[index].ind2-1].z);
-        printf("\t%i:\tv %.2f %.2f %.2f\n",
-               obj->faces[index].ind3,
-               obj->verts[obj->faces[index].ind3-1].x,
-               obj->verts[obj->faces[index].ind3-1].y,
-               obj->verts[obj->faces[index].ind3-1].z);
-    }
-}
-
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+char read_obj(object_ptr obj, const char *filename) ;
 
 int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
                    HINSTANCE hPrevInstance, // Always NULL for Win32
@@ -202,18 +122,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     int index, jndex, x0, x1, y0, y1;
     face_ptr face;
     vec3f_ptr v0, v1;
-    object obj;
+    static object obj;
     static bitmap bitmap;
 
     switch (msg) {
         case WM_CREATE: {
             printf("Set up cube\n");
-            set_object(&obj);
+
+            read_obj(&obj, "C:\\threedee\\african_head.obj");
 
             create_bitmap(&bitmap, width, height, 4);
 
             for (index = 0; index < obj.face_count; index++) {
                 face = &obj.faces[index];
+                if (!face) exit(0);
                 for (jndex = 0; jndex < 3; jndex++) {
                     v0 = &obj.verts[face->array[jndex]];
                     v1 = &obj.verts[face->array[(jndex + 1) % 3]];
@@ -224,6 +146,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     line(&bitmap, x0, y0, x1, y1, &white);
                 }
             }
+
+            flip_vert(&bitmap);
 
             break;
         }
@@ -260,5 +184,101 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
     return 0;
+}
+
+char read_obj(object_ptr obj, const char *filename) {
+    FILE *fp;
+    int index;
+    int v_count, vn_count, vt_count, f_count;
+    int v_index, vn_index, vt_index, f_index;
+    char buffer[1000], *temp, *v_search, *vn_search, *vt_search, *f_search;
+    fp = fopen(filename, "r");
+    if (!fp) return -1;
+
+    v_count = vn_count = vt_count = f_count = 0;
+    v_index = vn_index = vt_index = f_index = 0;
+
+    // The first loop
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        v_search = strstr(buffer, "v");
+        if (v_search != NULL) {
+            v_count++;
+            continue;
+        }
+        vn_search = strstr(buffer, "vn");
+        if (vn_search != NULL) {
+            vn_count++;
+            continue;
+        }
+        vt_search = strstr(buffer, "vt");
+        if (vt_search != NULL) {
+            vt_count++;
+            continue;
+        }
+        f_search = strstr(buffer, "f");
+        if (f_search != NULL) {
+            f_count++;
+            continue;
+        }
+    }
+
+    obj->vert_count = v_count;
+    obj->verts = calloc(obj->vert_count, sizeof(vec3f));
+    if (!obj->verts) {
+        fprintf(stderr, "Verts could not be allocated\n");
+        return 0;
+    }
+
+    obj->face_count = f_count;
+    obj->faces = calloc(obj->face_count, sizeof(vec3f));
+    if (!obj->faces) {
+        fprintf(stderr, "Faces could not be allocated\n");
+        return 0;
+    }
+
+    fseek(fp, 0, SEEK_SET);
+
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        v_search = strstr(buffer, "v");
+        if (v_search != NULL) {
+
+            temp = strtok(buffer, " ");
+            temp = strtok(NULL, " ");
+            obj->verts[v_index].x = atof(temp);
+            temp = strtok(NULL, " ");
+            obj->verts[v_index].y = atof(temp);
+            temp = strtok(NULL, " ");
+            obj->verts[v_index].z = atof(temp);
+            v_index++;
+            continue;
+        }
+        // TODO: Finish Vector Normals
+        vn_search = strstr(buffer, "vn");
+        if (vn_search != NULL) {
+            continue;
+        }
+        // TODO: Finish Vector Templates
+        vt_search = strstr(buffer, "vt");
+        if (vt_search != NULL) {
+            continue;
+        }
+        // TODO: Work on v/vn/vt format
+        f_search = strstr(buffer, "f");
+        if (f_search != NULL) {
+            temp = strtok(buffer, " ");
+            temp = strtok(NULL, " ");
+            obj->faces[f_index].ind1 = atof(temp) - 1;
+            temp = strtok(NULL, " ");
+            obj->faces[f_index].ind2 = atof(temp) - 1;
+            temp = strtok(NULL, " ");
+            obj->faces[f_index].ind3 = atof(temp) - 1;
+            f_index++;
+            continue;
+        }
+    }
+
+    fclose(fp);
+
+    return 1;
 }
 #endif
