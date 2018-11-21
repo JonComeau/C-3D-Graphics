@@ -1,6 +1,6 @@
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <mem.h>
 #include "threedee/bitmap.h"
 
 int create_bitmap(pbitmap self, int width, int height, int bytes_pp) {
@@ -27,22 +27,24 @@ char set(pbitmap self, int x, int y, color_ptr color) {
 }
 
 char flip_vert(pbitmap self) {
-    unsigned long bytes_per_line, l1, l2;
     unsigned char *line;
-    int half, index;
+    unsigned int half, index;
 
     if (!self->data) return 0;
 
-    bytes_per_line = self->width * self->bytes_pp;
-    line = calloc(bytes_per_line, sizeof(unsigned char));
+    line = malloc(self->width * sizeof(color));
     half = self->height >> 1;
 
     for (index = 0; index < half; index++) {
-        l1 = index;
-        l2 = self->height - 1 - index;
-        memmove((void *)line,            (void *)(self->data+l1), bytes_per_line);
-        memmove((void *)(self->data+l1), (void *)(self->data+l2), bytes_per_line);
-        memmove((void *)(self->data+l2), (void *)line,            bytes_per_line);
+        memmove(line,
+                self->data + index * self->width,
+                self->width * sizeof(color));
+        memmove(self->data + index * self->width,
+                self->data + (self->height - index - 1) * self->width,
+                self->width * sizeof(color));
+        memmove(self->data + (self->height - index - 1) * self->width,
+                line,
+                self->width * sizeof(color));
     }
 
     free(line);
