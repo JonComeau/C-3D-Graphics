@@ -6,6 +6,10 @@
 int create_bitmap(pbitmap self, int width, int height, int bytes_pp) {
     int index;
 
+    if (!self->data) {
+        free(self->data);
+    }
+
     self->height = height;
     self->width = width;
     self->bytes_pp = bytes_pp;

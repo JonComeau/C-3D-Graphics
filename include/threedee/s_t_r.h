@@ -2,11 +2,8 @@
 #define THREEDEE_S_T_R_H
 
 #include "threedee/types.h"
+#include "threedee/matrix.h"
 
-float sin_look[360+1],
-      cos_look[360+1];
-
-void build_lookup_tables();
-void rotate_object(object_ptr object, int angle_x, int angle_y, int angle_z);
+void global_rotate(mat4x4_ptr rot_x, mat4x4_ptr rot_y, mat4x4_ptr rot_z, float x_theta, float y_theta, float z_theta);
 
 #endif //THREEDEE_S_T_R_H

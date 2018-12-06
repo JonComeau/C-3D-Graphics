@@ -1,7 +1,12 @@
 #ifdef WIN32
+#include <float.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <threedee/matrix.h>
+#include <math.h>
+#include <threedee/s_t_r.h>
 #include "threedee/bitmap.h"
 #include "threedee/draw.h"
 #include "threedee/types.h"
@@ -119,33 +124,40 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     HDC hdc;
     PAINTSTRUCT ps;
 
-    int index, jndex, x0, x1, y0, y1;
-    face_ptr face;
-    vec3f_ptr v0, v1;
     static object obj;
     static bitmap bitmap;
 
+    static mat4x4 projection;
+    static float f_near, f_far, f_fov, f_aspect, f_fov_rad;
+
+    mat4x4 matRotZ = {0}, matRotX = {0};
+    tri_ptr tri_proj, tri_trans, tri_rot_z, tri_rot_zx;
+    int face_index, index;
+    face_ptr face_temp;
+
     switch (msg) {
         case WM_CREATE: {
-            printf("Set up cube\n");
+            // Initalizing Projection Matrix
+            projection.m[0][0] = projection.m[0][1] = projection.m[0][2] = projection.m[0][3] = 0;
+            projection.m[1][0] = projection.m[1][1] = projection.m[1][2] = projection.m[1][3] = 0;
+            projection.m[2][0] = projection.m[2][1] = projection.m[2][2] = projection.m[2][3] = 0;
+            projection.m[3][0] = projection.m[3][1] = projection.m[3][2] = projection.m[3][3] = 0;
 
-            read_obj(&obj, "C:\\threedee\\african_head.obj");
+            // Initializing FOV values
+            f_near = 0.1f;
+            f_far = 1000.0f;
+            f_fov = 90.0f;
+            f_aspect = (float)width / (float)height;
+            f_fov_rad = 1.0f / tanf(f_fov * 0.5f / 180.0f * 3.14159f);
 
-            create_bitmap(&bitmap, width, height, 4);
+            // Projection matrix values
+            projection.m[0][0] = f_aspect * f_fov_rad;
+            projection.m[1][1] = f_fov_rad;
+            projection.m[2][2] = f_far / (f_far - f_near);
+            projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
+            projection.m[2][3] = 1.0f;
 
-            for (index = 0; index < obj.face_count; index++) {
-                face = &obj.faces[index];
-                if (!face) exit(0);
-                for (jndex = 0; jndex < 3; jndex++) {
-                    v0 = &obj.verts[face->array[jndex]];
-                    v1 = &obj.verts[face->array[(jndex + 1) % 3]];
-                    x0 = (int) ((v0->x + 1.f) * width / 2.f);
-                    y0 = (int) ((v0->y + 1.f) * height / 2.f);
-                    x1 = (int) ((v1->x + 1.f) * width / 2.f);
-                    y1 = (int) ((v1->y + 1.f) * height / 2.f);
-                    line(&bitmap, x0, y0, x1, y1, &white);
-                }
-            }
+            read_obj(&obj, "C:\\threedee\\cube.obj");
 
             flip_vert(&bitmap);
 
@@ -156,6 +168,73 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             cyClient = HIWORD(lParam);
             break;
         case WM_PAINT:
+            // This initializes the Bitmap
+            create_bitmap(&bitmap, width, height, 4);
+
+            global_rotate(
+                &matRotX,
+                NULL,
+                &matRotZ,
+                0.001,
+                0,
+                0.0005
+            );
+
+            for (face_index = 0; face_index < obj.face_count; face_index++) {
+                // Get temp face
+                face_temp = &obj.faces[face_index];
+
+                // Allocate mem for the triangles
+                tri_proj = malloc(sizeof(tri));
+                tri_trans = malloc(sizeof(tri));
+                tri_rot_z = malloc(sizeof(tri));
+                tri_rot_zx = malloc(sizeof(tri));
+
+                // Rotate on x and z axis
+                for (index = 0; index < 3; index++) {
+                    tri_rot_z->p[index] = *mat4x4_vec3f_mult(&matRotZ, &obj.verts[face_temp->v[index]]);
+                    tri_rot_zx->p[index] = *mat4x4_vec3f_mult(&matRotX, &tri_rot_z->p[index]);
+                }
+
+                memcpy(tri_trans, tri_rot_zx, sizeof(tri));
+
+                // Offset the screen
+                tri_trans->p[0].z = tri_rot_zx->p[0].z + 3.0f;
+                tri_trans->p[1].z = tri_rot_zx->p[1].z + 3.0f;
+                tri_trans->p[2].z = tri_rot_zx->p[2].z + 3.0f;
+
+                // Project triangles from 3D -> 2D
+                tri_proj->p[0] = *mat4x4_vec3f_mult(&projection, &tri_trans->p[0]);
+                tri_proj->p[1] = *mat4x4_vec3f_mult(&projection, &tri_trans->p[1]);
+                tri_proj->p[2] = *mat4x4_vec3f_mult(&projection, &tri_trans->p[2]);
+
+                // Scale into screen
+                tri_proj->p[0].x += 1.0f;
+                tri_proj->p[1].x += 1.0f;
+                tri_proj->p[2].x += 1.0f;
+                tri_proj->p[0].y += 1.0f;
+                tri_proj->p[1].y += 1.0f;
+                tri_proj->p[2].y += 1.0f;
+                tri_proj->p[0].x *= 0.5f * (float)width;
+                tri_proj->p[1].x *= 0.5f * (float)width;
+                tri_proj->p[2].x *= 0.5f * (float)width;
+                tri_proj->p[0].y *= 0.5f * (float)height;
+                tri_proj->p[1].y *= 0.5f * (float)height;
+                tri_proj->p[2].y *= 0.5f * (float)height;
+
+                draw_tri(&bitmap,
+                         tri_proj->p[0].x, tri_proj->p[0].y,
+                         tri_proj->p[1].x, tri_proj->p[1].y,
+                         tri_proj->p[2].x, tri_proj->p[2].y,
+                         &white);
+
+                // Free the Triangles!
+                free(tri_proj);
+                free(tri_trans);
+                free(tri_rot_z);
+                free(tri_rot_zx);
+            }
+
             hdc = GetDC(hwnd);
             hdcMem = CreateCompatibleDC(hdc);
             hdc = BeginPaint(hwnd, &ps);
@@ -267,11 +346,11 @@ char read_obj(object_ptr obj, const char *filename) {
         if (f_search != NULL) {
             temp = strtok(buffer, " ");
             temp = strtok(NULL, " ");
-            obj->faces[f_index].ind1 = atof(temp) - 1;
+            obj->faces[f_index].v[0] = atoi(temp) - 1;
             temp = strtok(NULL, " ");
-            obj->faces[f_index].ind2 = atof(temp) - 1;
+            obj->faces[f_index].v[1] = atoi(temp) - 1;
             temp = strtok(NULL, " ");
-            obj->faces[f_index].ind3 = atof(temp) - 1;
+            obj->faces[f_index].v[2] = atoi(temp) - 1;
             f_index++;
             continue;
         }

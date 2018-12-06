@@ -51,3 +51,21 @@ vec3f_ptr vec3f_float_mult(vec3f_ptr lhs, float scalar) {
 
     return &ret;
 }
+
+vec3f_ptr mat4x4_vec3f_mult(mat4x4_ptr mat, vec3f_ptr vec) {
+    static vec3f ret;
+    float w;
+
+    ret.x = vec->x * mat->m[0][0] + vec->x * mat->m[1][0] + vec->z * mat->m[2][0] + mat->m[3][0];
+    ret.y = vec->x * mat->m[0][1] + vec->x * mat->m[1][1] + vec->z * mat->m[2][1] + mat->m[3][1];
+    ret.z = vec->x * mat->m[0][2] + vec->x * mat->m[1][2] + vec->z * mat->m[2][2] + mat->m[3][2];
+    w = vec->x * mat->m[0][3] + vec->x * mat->m[1][3] + vec->z * mat->m[2][3] + mat->m[3][3];
+
+    if (w != 0.0f) {
+        ret.x /= w;
+        ret.y /= w;
+        ret.z /= w;
+    }
+
+    return &ret;
+}
