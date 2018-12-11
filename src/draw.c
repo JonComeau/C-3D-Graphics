@@ -1,79 +1,90 @@
 #include <stdlib.h>
+#include <string.h>
 #include "threedee/draw.h"
 
-void draw_line(pbitmap map, int x1, int y1, int x2, int y2, color_ptr col) {
-    int x, y, dx, dy, dx1, dy1, px, py, xe, ye, index;
+void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color col) {
+    vec2i temp, a, b;
+    int total_height, index, jndex, seg_height;
+    char second_half;
+    float alpha, beta;
 
-    dx = x2 - x1;
-    dy = y2 - y1;
+    if (t0.y == t1.y && t0.y == t2.y) {
+        return;
+    }
 
-    dx1 = abs(dx);
-    dy1 = abs(dy);
+    if (t0.y > t1.y) {
+        temp = t0;
+        t0 = t1;
+        t1 = temp;
+    }
 
-    px = 2 * dy1 - dx1;
-    py = 2 * dx1 - dy1;
+    if (t0.y > t1.y) {
+        temp = t0;
+        t0 = t2;
+        t2 = temp;
+    }
 
-    if (dy1 <= dx1) {
-        if (dx >= 0) {
-            x = x1;
-            y = y1;
-            xe = x2;
-        } else {
-            x = x2;
-            y = y2;
-            xe = x1;
+    if (t1.y > t2.y) {
+        temp = t1;
+        t1 = t2;
+        t2 = temp;
+    }
+
+    total_height = t2.y - t0.y;
+
+    for (index = 0; index < total_height; index++) {
+        second_half = index > t1.y - t0.y || t1.y == t0.y;
+        seg_height = second_half ? t2.y - t1.y : t1.y - t0.y;
+        alpha = (float) index / total_height;
+        beta = (float) (index - (second_half ? t1.y - t0.y : 0)) / seg_height;
+        a = vec2i_vec2i_add(*t0, vec2i_float_mult(vec2i_vec2i_sub(*t2, *t0), alpha));
+        b = second_half ?
+                vec2i_vec2i_add(*t1, vec2i_float_mult(vec2i_vec2i_sub(*t2, *t1), beta)) :
+                vec2i_vec2i_add(*t0, vec2i_float_mult(vec2i_vec2i_sub(*t1, *t0), beta));
+
+        if (a.x > b.x) {
+            temp = a;
+            a = b;
+            b = temp;
         }
 
-        set(map, x, y, col);
-
-        for (index = 0; x < xe; index++) {
-            x = x + 1;
-
-            if (px < 0) {
-                px = px + 2 * y1;
-            } else {
-                if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) {
-                    y = y + 1;
-                } else {
-                    y = y - 1;
-                }
-                px = px + 2 * (dy1 - dx1);
-            }
-
-            set(map, x, y, col);
-        }
-    } else {
-        if (dy >= 0) {
-            x = x1;
-            y = y1;
-            ye = y2;
-        } else {
-            x = x2;
-            y = y2;
-            ye = y1;
-        }
-
-        set(map, x, y, col);
-
-        for (index = 0; y < ye; index++) {
-            y = y + 1;
-            if (py <= 0) {
-                py = py + 2 * dx1;
-            } else {
-                if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) {
-                    x = x + 1;
-                } else {
-                    x = x - 1;
-                }
-
-                set(map, x, y, col);
-            }
+        for (jndex = a.x; jndex <= b.x; jndex++) {
+            set(map, jndex, t0.y + index, col);
         }
     }
 }
 
-void draw_tri(pbitmap map, int x1, int y1, int x2, int y2, int x3, int y3, color_ptr col) {
-    draw_line(map, x1, y1, x2, y2, col);
-    draw_line(map, x2, y2, x3, y3, col);
-    draw_line(map, x3, y3, x1, y1, col);
+void draw_line(pbitmap map, int x0, int y0, int x1, int y1, color col) {
+    char steep = 0;
+    int x, y, temp_1, temp_2, temp_x;
+    float t;
+
+    // Switch x and y around if dx < dy
+    if (abs(x0 - x1) < abs(y0 - y1)) {
+        temp_1 = x0;
+        temp_2 = x1;
+        x0 = y0;
+        x1 = y1;
+        y0 = temp_1;
+        y1 = temp_2;
+
+        steep = 1;
+    }
+
+    // swap if x0 > x1
+    if (x0 > x1) {
+        temp_x = x0;
+        x0 = x1;
+        x1 = temp_x;
+    }
+
+    for (x = 0; x < x1; x++) {
+        t = (x - x0) / (float)(x1 - x0);
+        y = (int) (y0 * (1.0f - t) + y1 * t);
+        if (steep) {
+            set(map, y, x, col);
+        } else {
+            set(map, x, y, col);
+        }
+    }
 }

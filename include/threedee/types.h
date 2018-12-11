@@ -23,6 +23,13 @@ typedef union vec2f_typ {
     float array[2];
 } vec2f, *vec2f_ptr;
 
+typedef union vec2i_typ {
+    struct {
+        int x, y;
+    };
+    int array[2];
+} vec2i, *vec2i_ptr;
+
 typedef struct face_type {
     int v[3];
 } face, *face_ptr;
@@ -42,15 +49,21 @@ typedef struct tri_typ {
     vec3f p[3];
 } tri, *tri_ptr;
 
-float vec3f_norm(vec3f_ptr self);
-vec3f_ptr vec3f_normalize(vec3f_ptr self);
-vec3f_ptr vec3f_normalize_l(vec3f_ptr self, float l);
-float vec3f_vec3f_mult(vec3f_ptr lhs, vec3f_ptr rhs);
-vec3f_ptr vec3f_vec3f_add(vec3f_ptr lhs, vec3f_ptr rhs);
-vec3f_ptr vec3f_vec3f_sub(vec3f_ptr lhs, vec3f_ptr rhs);
-vec3f_ptr vec3f_vec3f_cross(vec3f_ptr lhs, vec3f_ptr rhs);
-vec3f_ptr vec3f_float_mult(vec3f_ptr lhs, float scalar);
+// Vec3f
+float vec3f_norm(vec3f self);
+vec3f vec3f_normalize(vec3f self);
+vec3f vec3f_normalize_l(vec3f self, float l);
+float vec3f_vec3f_mult(vec3f lhs, vec3f rhs);
+vec3f vec3f_vec3f_add(vec3f lhs, vec3f rhs);
+vec3f vec3f_vec3f_sub(vec3f lhs, vec3f rhs);
+vec3f vec3f_vec3f_cross(vec3f lhs, vec3f rhs);
+vec3f vec3f_float_mult(vec3f lhs, float scalar);
 
-vec3f_ptr mat4x4_vec3f_mult(mat4x4_ptr mat, vec3f_ptr vec);
+vec3f mat4x4_vec3f_mult(mat4x4 mat, vec3f vec);
+
+// Vec2i
+vec2i vec2i_vec2i_add(vec2i lhs, vec2i rhs);
+vec2i vec2i_vec2i_sub(vec2i lhs, vec2i rhs);
+vec2i vec2i_float_mult(vec2i self, float scalar);
 
 #endif //THREEDEE_TYPES_H

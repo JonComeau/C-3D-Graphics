@@ -98,7 +98,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             bitmap.data[2] = (color){255, 0,   0,   1};
             bitmap.data[3] = (color){0,   255, 0,   1};
             // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
-            BITMAP bm = {0, bitmap.width, bitmap.height, bitmap.width * 4, 1, (WORD) bitmap.bpp};
+            BITMAP bm = {0, bitmap.width, bitmap.height, bitmap.width * 4, 1, (WORD) bitmap.bytes_pp * 8};
 
             bm.bmBits = bitmap.data;
             hBitmap = CreateBitmapIndirect(&bm);

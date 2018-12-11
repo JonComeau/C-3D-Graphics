@@ -38,15 +38,12 @@
  */
 
 const char g_szClassName[] = "myWindowClass";
-const int width = 800, height = 800;
+const int width = 1280, height = 720;
 
 color white = {255, 255, 255, 255};
 color red = {255, 0, 0, 255};
 
-vec3f LIGHT_DIR = {1, 1, 1};
-vec3f EYE =       {1, 1, 3};
-vec3f CENTER =    {0, 0, 0};
-vec3f UP =        {0, 1, 0};
+vec3f LIGHT_DIR, EYE, CENTER, UP;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -130,10 +127,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static mat4x4 projection;
     static float f_near, f_far, f_fov, f_aspect, f_fov_rad;
 
-    mat4x4 matRotZ = {0}, matRotX = {0};
-    tri_ptr tri_proj, tri_trans, tri_rot_z, tri_rot_zx;
-    int face_index, index;
-    face_ptr face_temp;
+    int index, jndex;
+    face_ptr face;
+    vec3f_ptr vec;
+    vec3f n, world_coords[3];
+    vec2i screen_coords[3];
+    float intensity;
 
     switch (msg) {
         case WM_CREATE: {
@@ -157,9 +156,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
             projection.m[2][3] = 1.0f;
 
-            read_obj(&obj, "C:\\threedee\\cube.obj");
-
-            flip_vert(&bitmap);
+            read_obj(&obj, "C:\\threedee\\african_head.obj");
 
             break;
         }
@@ -171,69 +168,28 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // This initializes the Bitmap
             create_bitmap(&bitmap, width, height, 4);
 
-            global_rotate(
-                &matRotX,
-                NULL,
-                &matRotZ,
-                0.001,
-                0,
-                0.0005
-            );
-
-            for (face_index = 0; face_index < obj.face_count; face_index++) {
-                // Get temp face
-                face_temp = &obj.faces[face_index];
-
-                // Allocate mem for the triangles
-                tri_proj = malloc(sizeof(tri));
-                tri_trans = malloc(sizeof(tri));
-                tri_rot_z = malloc(sizeof(tri));
-                tri_rot_zx = malloc(sizeof(tri));
-
-                // Rotate on x and z axis
-                for (index = 0; index < 3; index++) {
-                    tri_rot_z->p[index] = *mat4x4_vec3f_mult(&matRotZ, &obj.verts[face_temp->v[index]]);
-                    tri_rot_zx->p[index] = *mat4x4_vec3f_mult(&matRotX, &tri_rot_z->p[index]);
+            LIGHT_DIR = (vec3f){0, 0, -1};
+            for (index = 0; index < obj.face_count; index++) {
+                face = &obj.faces[index];
+                for (jndex = 0; jndex < 3; jndex++) {
+                    vec = &obj.verts[face->v[jndex] + 1];
+                    screen_coords[jndex] = (vec2i){(vec->x + 1.) * width / 2., (vec->y + 1.) * height / 2.};
+                    world_coords[jndex] = *vec;
                 }
-
-                memcpy(tri_trans, tri_rot_zx, sizeof(tri));
-
-                // Offset the screen
-                tri_trans->p[0].z = tri_rot_zx->p[0].z + 3.0f;
-                tri_trans->p[1].z = tri_rot_zx->p[1].z + 3.0f;
-                tri_trans->p[2].z = tri_rot_zx->p[2].z + 3.0f;
-
-                // Project triangles from 3D -> 2D
-                tri_proj->p[0] = *mat4x4_vec3f_mult(&projection, &tri_trans->p[0]);
-                tri_proj->p[1] = *mat4x4_vec3f_mult(&projection, &tri_trans->p[1]);
-                tri_proj->p[2] = *mat4x4_vec3f_mult(&projection, &tri_trans->p[2]);
-
-                // Scale into screen
-                tri_proj->p[0].x += 1.0f;
-                tri_proj->p[1].x += 1.0f;
-                tri_proj->p[2].x += 1.0f;
-                tri_proj->p[0].y += 1.0f;
-                tri_proj->p[1].y += 1.0f;
-                tri_proj->p[2].y += 1.0f;
-                tri_proj->p[0].x *= 0.5f * (float)width;
-                tri_proj->p[1].x *= 0.5f * (float)width;
-                tri_proj->p[2].x *= 0.5f * (float)width;
-                tri_proj->p[0].y *= 0.5f * (float)height;
-                tri_proj->p[1].y *= 0.5f * (float)height;
-                tri_proj->p[2].y *= 0.5f * (float)height;
-
-                draw_tri(&bitmap,
-                         tri_proj->p[0].x, tri_proj->p[0].y,
-                         tri_proj->p[1].x, tri_proj->p[1].y,
-                         tri_proj->p[2].x, tri_proj->p[2].y,
-                         &white);
-
-                // Free the Triangles!
-                free(tri_proj);
-                free(tri_trans);
-                free(tri_rot_z);
-                free(tri_rot_zx);
+                n = vec3f_vec3f_cross(
+                        vec3f_vec3f_sub(world_coords[2], world_coords[0]),
+                        vec3f_vec3f_sub(world_coords[1], world_coords[0]));
+                n = vec3f_normalize(n);
+                intensity = vec3f_vec3f_mult(n, LIGHT_DIR);
+                if (intensity > 0) {
+                    draw_tri(&bitmap, &screen_coords[0], &screen_coords[1], &screen_coords[2],
+                             &(color){(unsigned char) (intensity * 255),
+                                      (unsigned char) (intensity * 255),
+                                      (unsigned char) (intensity * 255), 255});
+                }
             }
+
+            flip_vert(&bitmap);
 
             hdc = GetDC(hwnd);
             hdcMem = CreateCompatibleDC(hdc);
