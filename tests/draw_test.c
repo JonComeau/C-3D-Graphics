@@ -172,7 +172,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             for (index = 0; index < obj.face_count; index++) {
                 face = &obj.faces[index];
                 for (jndex = 0; jndex < 3; jndex++) {
-                    vec = &obj.verts[face->v[jndex] + 1];
+                    vec = &obj.verts[face->v[jndex]];
                     screen_coords[jndex] = (vec2i){(vec->x + 1.) * width / 2., (vec->y + 1.) * height / 2.};
                     world_coords[jndex] = *vec;
                 }
@@ -182,7 +182,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 n = vec3f_normalize(n);
                 intensity = vec3f_vec3f_mult(n, LIGHT_DIR);
                 if (intensity > 0) {
-                    draw_tri(&bitmap, &screen_coords[0], &screen_coords[1], &screen_coords[2],
+                    draw_tri(&bitmap, screen_coords[0], screen_coords[1], screen_coords[2],
                              &(color){(unsigned char) (intensity * 255),
                                       (unsigned char) (intensity * 255),
                                       (unsigned char) (intensity * 255), 255});
@@ -229,6 +229,7 @@ char read_obj(object_ptr obj, const char *filename) {
     char buffer[1000], *temp, *v_search, *vn_search, *vt_search, *f_search;
     fp = fopen(filename, "r");
     if (!fp) return -1;
+    float max = 0;
 
     v_count = vn_count = vt_count = f_count = 0;
     v_index = vn_index = vt_index = f_index = 0;
@@ -274,14 +275,18 @@ char read_obj(object_ptr obj, const char *filename) {
     fseek(fp, 0, SEEK_SET);
 
     while (fgets(buffer, sizeof(buffer), fp)) {
-        v_search = strstr(buffer, "v");
+        v_search = strstr(buffer, "v ");
         if (v_search != NULL) {
 
             temp = strtok(buffer, " ");
             temp = strtok(NULL, " ");
             obj->verts[v_index].x = atof(temp);
+            if (fabsf(obj->verts[v_index].x) > fabsf(max))
+                max = obj->verts[v_index].x;
             temp = strtok(NULL, " ");
             obj->verts[v_index].y = atof(temp);
+            if (fabsf(obj->verts[v_index].y) > fabsf(max))
+                max = obj->verts[v_index].y;
             temp = strtok(NULL, " ");
             obj->verts[v_index].z = atof(temp);
             v_index++;
@@ -298,7 +303,7 @@ char read_obj(object_ptr obj, const char *filename) {
             continue;
         }
         // TODO: Work on v/vn/vt format
-        f_search = strstr(buffer, "f");
+        f_search = strstr(buffer, "f ");
         if (f_search != NULL) {
             temp = strtok(buffer, " ");
             temp = strtok(NULL, " ");
@@ -310,6 +315,11 @@ char read_obj(object_ptr obj, const char *filename) {
             f_index++;
             continue;
         }
+    }
+
+    for (int i = 0; i < obj->vert_count; i++) {
+        obj->verts[i].x /= fabsf(max);
+        obj->verts[i].y /= fabsf(max);
     }
 
     fclose(fp);

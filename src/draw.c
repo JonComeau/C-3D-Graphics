@@ -2,7 +2,7 @@
 #include <string.h>
 #include "threedee/draw.h"
 
-void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color col) {
+void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color_ptr col) {
     vec2i temp, a, b;
     int total_height, index, jndex, seg_height;
     char second_half;
@@ -37,10 +37,10 @@ void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color col) {
         seg_height = second_half ? t2.y - t1.y : t1.y - t0.y;
         alpha = (float) index / total_height;
         beta = (float) (index - (second_half ? t1.y - t0.y : 0)) / seg_height;
-        a = vec2i_vec2i_add(*t0, vec2i_float_mult(vec2i_vec2i_sub(*t2, *t0), alpha));
+        a = vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t2, t0), alpha));
         b = second_half ?
-                vec2i_vec2i_add(*t1, vec2i_float_mult(vec2i_vec2i_sub(*t2, *t1), beta)) :
-                vec2i_vec2i_add(*t0, vec2i_float_mult(vec2i_vec2i_sub(*t1, *t0), beta));
+                vec2i_vec2i_add(t1, vec2i_float_mult(vec2i_vec2i_sub(t2, t1), beta)) :
+                vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t1, t0), beta));
 
         if (a.x > b.x) {
             temp = a;
@@ -54,7 +54,7 @@ void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color col) {
     }
 }
 
-void draw_line(pbitmap map, int x0, int y0, int x1, int y1, color col) {
+void draw_line(pbitmap map, int x0, int y0, int x1, int y1, color_ptr col) {
     char steep = 0;
     int x, y, temp_1, temp_2, temp_x;
     float t;
