@@ -171,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
             LIGHT_DIR = (vec3f){0, 0, -1};
 
-            //rotate_obj(&obj, 3.14, 0, 0);
+            //rotate_obj(&obj, 0, 0, 0);
             //trans_obj(&obj, 1, 0, 0);
             //scale_obj(&obj, .5, .5, .5);
 
