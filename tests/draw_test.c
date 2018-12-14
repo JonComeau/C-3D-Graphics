@@ -170,6 +170,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             create_bitmap(&bitmap, width, height, 4);
 
             LIGHT_DIR = (vec3f){0, 0, -1};
+
+            //rotate_obj(&obj, 3.14, 0, 0);
+            //trans_obj(&obj, 1, 0, 0);
+            //scale_obj(&obj, .5, .5, .5);
+
             for (index = 0; index < obj.face_count; index++) {
                 face = &obj.faces[index];
                 for (jndex = 0; jndex < 3; jndex++) {
@@ -181,8 +186,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         vec3f_vec3f_sub(world_coords[2], world_coords[0]),
                         vec3f_vec3f_sub(world_coords[1], world_coords[0]));
                 n = vec3f_normalize(n);
-                intensity = vec3f_vec3f_mult(n, LIGHT_DIR);
-                if (intensity > 0) {
+                intensity = fabsf(vec3f_vec3f_mult(n, LIGHT_DIR));
+                if (intensity > 0.f) {
                     draw_tri(&bitmap, screen_coords[0], screen_coords[1], screen_coords[2],
                              &(color){(unsigned char) (intensity * 255),
                                       (unsigned char) (intensity * 255),

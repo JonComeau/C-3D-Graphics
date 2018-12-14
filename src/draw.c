@@ -8,10 +8,6 @@ void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color_ptr col) {
     char second_half;
     float alpha, beta;
 
-    if (t0.y == t1.y && t0.y == t2.y) {
-        return;
-    }
-
     if (t0.y > t1.y) {
         temp = t0;
         t0 = t1;
