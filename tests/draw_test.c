@@ -7,6 +7,7 @@
 #include <threedee/matrix.h>
 #include <math.h>
 #include <threedee/s_t_r.h>
+#include <threedee/tga.h>
 #include "threedee/bitmap.h"
 #include "threedee/draw.h"
 #include "threedee/types.h"
@@ -38,7 +39,7 @@
  */
 
 const char g_szClassName[] = "myWindowClass";
-const int width = 1280, height = 720;
+const int width = 1280 / 2, height = 720;
 
 color white = {255, 255, 255, 255};
 color red = {255, 0, 0, 255};
@@ -46,8 +47,8 @@ color red = {255, 0, 0, 255};
 vec3f LIGHT_DIR, EYE, CENTER, UP;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
-char read_obj(object_ptr obj, const char *filename) ;
+char read_obj(object_ptr obj, const char *filename);
+void errhandler(LPTSTR error_str, HWND hwnd);
 
 int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
                    HINSTANCE hPrevInstance, // Always NULL for Win32
@@ -156,7 +157,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
             projection.m[2][3] = 1.0f;
 
-            read_obj(&obj, "C:\\threedee\\african_head.obj");
+            read_obj(&obj, "C:\\threedee\\teapot.obj");
 
             break;
         }
@@ -210,8 +211,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             EndPaint(hwnd, &ps);
             break;
         case WM_DESTROY: // Used when DestroyWindow() is used
+
+            // Save the bitmap
+            write_file(&bitmap, "C:\\threedee\\teapot.tga");
+
             DeleteDC(hdcMem);
             ReleaseDC(hwnd, hdc);
+
             DeleteObject(hBitmap);
             PostQuitMessage(0);
             break;
@@ -289,6 +295,8 @@ char read_obj(object_ptr obj, const char *filename) {
                 max = obj->verts[v_index].y;
             temp = strtok(NULL, " ");
             obj->verts[v_index].z = atof(temp);
+            if (fabsf(obj->verts[v_index].z) > fabsf(max))
+                max = obj->verts[v_index].z;
             v_index++;
             continue;
         }
@@ -320,10 +328,44 @@ char read_obj(object_ptr obj, const char *filename) {
     for (int i = 0; i < obj->vert_count; i++) {
         obj->verts[i].x /= fabsf(max);
         obj->verts[i].y /= fabsf(max);
+        obj->verts[i].z /= fabsf(max);
     }
 
     fclose(fp);
 
     return 1;
+}
+
+void errhandler(LPTSTR error_str, HWND hwnd) {
+    // Retrieve the system error message for the last-error code
+
+    LPVOID lpMsgBuf;
+    LPVOID lpDisplayBuf;
+    DWORD dw = GetLastError();
+
+    FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            dw,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &lpMsgBuf,
+            0, NULL );
+
+    // Display the error message and exit the process
+
+    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+                                      (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)error_str) + 40) * sizeof(TCHAR));
+//    StringCchPrintf((LPTSTR)lpDisplayBuf,
+//                    LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+//                    TEXT("%s failed with error %d: %s"),
+//                    error_str, dw, lpMsgBuf);
+    sprintf(lpDisplayBuf, "%s failed with error %d: %s", error_str, dw, lpMsgBuf);
+    MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
+
+    LocalFree(lpMsgBuf);
+    LocalFree(lpDisplayBuf);
+    ExitProcess(dw);
 }
 #endif
