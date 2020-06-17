@@ -1,51 +1,97 @@
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
+#include <threedee/ops.h>
+#include <threedee/math.h>
 #include "threedee/draw.h"
 
-void draw_tri(pbitmap map, vec2i t0, vec2i t1, vec2i t2, color_ptr col) {
-    vec2i temp, a, b;
-    int total_height, index, jndex, seg_height;
-    char second_half;
-    float alpha, beta;
+//void draw_tri(pbitmap map, int* zbuffer, vec2i t0, vec2i t1, vec2i t2, color_ptr col) {
+//    vec2i temp, a, b;
+//    int total_height, index, jndex, seg_height;
+//    char second_half;
+//    float alpha, beta;
+//
+//    if (t0.y > t1.y) {
+//        temp = t0;
+//        t0 = t1;
+//        t1 = temp;
+//    }
+//
+//    if (t0.y > t1.y) {
+//        temp = t0;
+//        t0 = t2;
+//        t2 = temp;
+//    }
+//
+//    if (t1.y > t2.y) {
+//        temp = t1;
+//        t1 = t2;
+//        t2 = temp;
+//    }
+//
+//    total_height = t2.y - t0.y;
+//
+//    for (index = 0; index < total_height; index++) {
+//        second_half = index > t1.y - t0.y || t1.y == t0.y;
+//        seg_height = second_half ? t2.y - t1.y : t1.y - t0.y;
+//        alpha = (float) index / total_height;
+//        beta = (float) (index - (second_half ? t1.y - t0.y : 0)) / seg_height;
+//        a = vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t2, t0), alpha));
+//        b = second_half ?
+//            vec2i_vec2i_add(t1, vec2i_float_mult(vec2i_vec2i_sub(t2, t1), beta)) :
+//            vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t1, t0), beta));
+//
+//        if (a.x > b.x) {
+//            temp = a;
+//            a = b;
+//            b = temp;
+//        }
+//
+//        for (jndex = a.x; jndex <= b.x; jndex++) {
+//            set(map, jndex, t0.y + index, col);
+//        }
+//    }
+//}
 
-    if (t0.y > t1.y) {
-        temp = t0;
-        t0 = t1;
-        t1 = temp;
-    }
+void draw_tri(pbitmap map, float* zbuffer, vec3f t0, vec3f t1, vec3f t2, color_ptr col) {
+    vec3f p, bc_screen;
+    vec2f bboxmin, bboxmax, clamp;
 
-    if (t0.y > t1.y) {
-        temp = t0;
-        t0 = t2;
-        t2 = temp;
-    }
+    bboxmin = (vec2f){FLT_MAX, FLT_MAX};
+    bboxmax = (vec2f){-FLT_MAX, -FLT_MAX};
+    clamp = (vec2f){map->width - 1., map->height - 1};
 
-    if (t1.y > t2.y) {
-        temp = t1;
-        t1 = t2;
-        t2 = temp;
-    }
+    bboxmin.x = max(0.f, min(bboxmin.x, t0.x));
+    bboxmin.x = max(0.f, min(bboxmin.x, t1.x));
+    bboxmin.x = max(0.f, min(bboxmin.x, t2.x));
+    bboxmin.y = max(0.f, min(bboxmin.y, t0.y));
+    bboxmin.y = max(0.f, min(bboxmin.y, t1.y));
+    bboxmin.y = max(0.f, min(bboxmin.y, t2.y));
 
-    total_height = t2.y - t0.y;
+    bboxmax.x = min(clamp.x, max(bboxmax.x, t0.x));
+    bboxmax.x = min(clamp.x, max(bboxmax.x, t1.x));
+    bboxmax.x = min(clamp.x, max(bboxmax.x, t2.x));
+    bboxmax.y = min(clamp.y, max(bboxmax.y, t0.y));
+    bboxmax.y = min(clamp.y, max(bboxmax.y, t1.y));
+    bboxmax.y = min(clamp.y, max(bboxmax.y, t2.y));
 
-    for (index = 0; index < total_height; index++) {
-        second_half = index > t1.y - t0.y || t1.y == t0.y;
-        seg_height = second_half ? t2.y - t1.y : t1.y - t0.y;
-        alpha = (float) index / total_height;
-        beta = (float) (index - (second_half ? t1.y - t0.y : 0)) / seg_height;
-        a = vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t2, t0), alpha));
-        b = second_half ?
-                vec2i_vec2i_add(t1, vec2i_float_mult(vec2i_vec2i_sub(t2, t1), beta)) :
-                vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t1, t0), beta));
+    p = (vec3f){0, 0, 0};
 
-        if (a.x > b.x) {
-            temp = a;
-            a = b;
-            b = temp;
-        }
+    for (p.x = bboxmin.x; p.x <= bboxmin.x; p.x++) {
+        for (p.y = bboxmin.y; p.y <= bboxmin.y; p.y++) {
+            bc_screen = barycentric(t0, t1, t2, p);
 
-        for (jndex = a.x; jndex <= b.x; jndex++) {
-            set(map, jndex, t0.y + index, col);
+            if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
+                continue;
+
+            p.z += t0.z * bc_screen.array[0];
+            p.z += t1.z * bc_screen.array[1];
+            p.z += t2.z * bc_screen.array[2];
+
+            if (zbuffer[(int)(p.x + p.y * map->width)] < p.z) {
+                zbuffer[(int)(p.x + p.y * map->width)] = p.z;
+                set(map, p.x, p.y, col);
+            }
         }
     }
 }

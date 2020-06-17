@@ -49,6 +49,8 @@ vec3f LIGHT_DIR, EYE, CENTER, UP;
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 char read_obj(object_ptr obj, const char *filename);
 void errhandler(LPTSTR error_str, HWND hwnd);
+void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
+            HBITMAP* hBitmp, object obj, float* zbuffer, int cxClient, int cyClient);
 
 int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
                    HINSTANCE hPrevInstance, // Always NULL for Win32
@@ -116,24 +118,20 @@ int WINAPI WinMain(HINSTANCE hInstance, // Handle to the program's exe module
 // The window procedure is called for each message
 // This is where all messages are handled
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    static HBITMAP hBitmap;
+    static HBITMAP hBitmp;
     static HDC hdcMem;
-    static int cxBitmap, cyBitmap, cxClient, cyClient;
+    static int cxBitmp, cyBitmp, cxClient, cyClient;
     HDC hdc;
     PAINTSTRUCT ps;
 
+    float* zbuffer;
+    int index;
+
     static object obj;
-    static bitmap bitmap;
+    static bitmap bitmp;
 
     static mat4x4 projection;
     static float f_near, f_far, f_fov, f_aspect, f_fov_rad;
-
-    int index, jndex;
-    face_ptr face;
-    vec3f_ptr vec;
-    vec3f n, world_coords[3];
-    vec2i screen_coords[3];
-    float intensity;
 
     switch (msg) {
         case WM_CREATE: {
@@ -157,79 +155,106 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
             projection.m[2][3] = 1.0f;
 
-            read_obj(&obj, "C:\\threedee\\teapot.obj");
+            read_obj(&obj, "C:\\Users\\vylly\\CLionProjects\\C-3D-Graphics\\res\\african_head.obj");
 
+            print_obj(obj);
+
+            //SetTimer(hwnd, 1, 20, NULL);
             break;
         }
+        case WM_TIMER:
+            //InvalidateRect(hwnd, NULL, FALSE);
+            break;
         case WM_SIZE:
             cxClient = LOWORD(lParam);
             cyClient = HIWORD(lParam);
             break;
         case WM_PAINT:
-            // This initializes the Bitmap
-            create_bitmap(&bitmap, width, height, 4);
-
-            LIGHT_DIR = (vec3f){0, 0, -1};
-
-            //rotate_obj(&obj, 0, 0, 0);
-            //trans_obj(&obj, 1, 0, 0);
-            //scale_obj(&obj, .5, .5, .5);
-
-            for (index = 0; index < obj.face_count; index++) {
-                face = &obj.faces[index];
-                for (jndex = 0; jndex < 3; jndex++) {
-                    vec = &obj.verts[face->v[jndex]];
-                    screen_coords[jndex] = (vec2i){(vec->x + 1.) * width / 2., (vec->y + 1.) * height / 2.};
-                    world_coords[jndex] = *vec;
-                }
-                n = vec3f_vec3f_cross(
-                        vec3f_vec3f_sub(world_coords[2], world_coords[0]),
-                        vec3f_vec3f_sub(world_coords[1], world_coords[0]));
-                n = vec3f_normalize(n);
-                intensity = fabsf(vec3f_vec3f_mult(n, LIGHT_DIR));
-                if (intensity > 0.f) {
-                    draw_tri(&bitmap, screen_coords[0], screen_coords[1], screen_coords[2],
-                             &(color){(unsigned char) (intensity * 255),
-                                      (unsigned char) (intensity * 255),
-                                      (unsigned char) (intensity * 255), 255});
-                }
-            }
-
-            flip_vert(&bitmap);
-
             hdc = GetDC(hwnd);
+
+            // This initializes the Bitmap
+            create_bitmap(&bitmp, width, height, 4);
+
+            zbuffer = (float*) malloc(width * height * sizeof(float));
+
+            for (index = width * height; index--; zbuffer[index] = -FLT_MAX);
+
+            flip_vert(&bitmp);
             hdcMem = CreateCompatibleDC(hdc);
             hdc = BeginPaint(hwnd, &ps);
 
-            // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
-            BITMAP bm = {0, bitmap.width, bitmap.height, bitmap.width * 4, 1, (WORD) (bitmap.bytes_pp * 8)};
-
-            bm.bmBits = bitmap.data;
-            hBitmap = CreateBitmapIndirect(&bm);
-            cxBitmap = bm.bmWidth;
-            cyBitmap = bm.bmHeight;
-            SelectObject(hdcMem, hBitmap);
-
-            StretchBlt(hdc, 0, 0, cxClient, cyClient,
-                       hdcMem, 0, 0, cxBitmap, cyBitmap, SRCCOPY);
+            render(hwnd, hdc, hdcMem, &bitmp, &hBitmp, obj, zbuffer, cxClient, cyClient);
 
             EndPaint(hwnd, &ps);
             break;
         case WM_DESTROY: // Used when DestroyWindow() is used
 
             // Save the bitmap
-            write_file(&bitmap, "C:\\threedee\\teapot.tga");
+            write_file(&bitmp, "C:\\threedee\\teapot.tga");
 
             DeleteDC(hdcMem);
             ReleaseDC(hwnd, hdc);
 
-            DeleteObject(hBitmap);
+            DeleteObject(hBitmp);
             PostQuitMessage(0);
             break;
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
     return 0;
+}
+
+void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
+        HBITMAP* hBitmp, object obj, float* zbuffer, int cxClient, int cyClient) {
+    int index, jndex, cxBitmp, cyBitmp;
+    face_ptr face;
+    vec3f_ptr vec;
+    vec3f n, world_coords[3], screen_coords[3];
+    float intensity;
+
+    LIGHT_DIR = (vec3f){0, 0, -1};
+
+    //rotate_obj(&obj, 0, 0, 0);
+    //trans_obj(&obj, 1, 0, 0);
+    //scale_obj(&obj, .95f, .95f, .95f);
+
+    for (index = 0; index < obj.face_count; index++) {
+        face = &obj.faces[index];
+        for (jndex = 0; jndex < 3; jndex++) {
+            vec = &obj.verts[face->v[jndex]];
+            screen_coords[jndex] = (vec3f) {(int)(vec->x * width / 2 + .5), (int)(vec->y * height / 2 + .5), vec->z};
+            world_coords[jndex] = *vec;
+        }
+        n = vec3f_vec3f_cross(
+                vec3f_vec3f_sub(world_coords[2], world_coords[0]),
+                vec3f_vec3f_sub(world_coords[1], world_coords[0]));
+        n = vec3f_normalize(n);
+        intensity = fabsf(vec3f_vec3f_mult(n, LIGHT_DIR));
+        if (intensity > 0.f) {
+            draw_tri(bitmp, zbuffer, screen_coords[0], screen_coords[1], screen_coords[2],
+                     &(color){(unsigned char) (intensity * 255),
+                              (unsigned char) (intensity * 255),
+                              (unsigned char) (intensity * 255), 255});
+        }
+    }
+
+    // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
+    BITMAP bm = {
+            0,
+            bitmp->width,
+            bitmp->height,
+            bitmp->width * 4,
+            1,
+            (WORD) (bitmp->bytes_pp * 8)};
+
+    bm.bmBits = bitmp->data;
+    *hBitmp = CreateBitmapIndirect(&bm);
+    cxBitmp = bm.bmWidth;
+    cyBitmp = bm.bmHeight;
+    SelectObject(hdcMem, *hBitmp);
+
+    StretchBlt(hdc, 0, 0, cxClient, cyClient,
+               hdcMem, 0, 0, cxBitmp, cyBitmp, SRCCOPY);
 }
 
 char read_obj(object_ptr obj, const char *filename) {
@@ -239,8 +264,13 @@ char read_obj(object_ptr obj, const char *filename) {
     int v_index, vn_index, vt_index, f_index;
     char buffer[1000], *temp, *v_search, *vn_search, *vt_search, *f_search;
     fp = fopen(filename, "r");
-    if (!fp) return -1;
+    if (!fp) {
+        printf("There was no file\n");
+        return -1;
+    }
     float max = 0;
+
+    printf("Read Obj\n");
 
     v_count = vn_count = vt_count = f_count = 0;
     v_index = vn_index = vt_index = f_index = 0;
@@ -268,6 +298,9 @@ char read_obj(object_ptr obj, const char *filename) {
             continue;
         }
     }
+
+    printf("vert_count: %i\n", v_count);
+    printf("face_count: %i\n", f_count);
 
     obj->vert_count = v_count;
     obj->verts = calloc(obj->vert_count, sizeof(vec3f));
@@ -332,7 +365,7 @@ char read_obj(object_ptr obj, const char *filename) {
 
     for (int i = 0; i < obj->vert_count; i++) {
         obj->verts[i].x /= fabsf(max);
-        obj->verts[i].y /= fabsf(max);
+        obj->verts[i].y /= -fabsf(max);
         obj->verts[i].z /= fabsf(max);
     }
 

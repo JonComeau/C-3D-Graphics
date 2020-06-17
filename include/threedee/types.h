@@ -58,6 +58,7 @@ vec3f vec3f_vec3f_add(vec3f lhs, vec3f rhs);
 vec3f vec3f_vec3f_sub(vec3f lhs, vec3f rhs);
 vec3f vec3f_vec3f_cross(vec3f lhs, vec3f rhs);
 vec3f vec3f_float_mult(vec3f lhs, float scalar);
+float vec3f_vec3f_dot(vec3f lhs, vec3f rhs);
 
 vec3f mat4x4_vec3f_mult(mat4x4 mat, vec3f vec);
 
@@ -65,5 +66,7 @@ vec3f mat4x4_vec3f_mult(mat4x4 mat, vec3f vec);
 vec2i vec2i_vec2i_add(vec2i lhs, vec2i rhs);
 vec2i vec2i_vec2i_sub(vec2i lhs, vec2i rhs);
 vec2i vec2i_float_mult(vec2i self, float scalar);
+
+void print_obj(object obj);
 
 #endif //THREEDEE_TYPES_H
