@@ -155,7 +155,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
             projection.m[2][3] = 1.0f;
 
-            read_obj(&obj, "C:\\Users\\vylly\\CLionProjects\\C-3D-Graphics\\res\\african_head.obj");
+            read_obj(&obj, "..\\res\\test.obj");
 
             print_obj(obj);
 
@@ -333,6 +333,7 @@ char read_obj(object_ptr obj, const char *filename) {
                 max = obj->verts[v_index].y;
             temp = strtok(NULL, " ");
             obj->verts[v_index].z = atof(temp);
+            printf("vert:%i ")
             if (fabsf(obj->verts[v_index].z) > fabsf(max))
                 max = obj->verts[v_index].z;
             v_index++;
