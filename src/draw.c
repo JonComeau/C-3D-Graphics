@@ -6,54 +6,6 @@
 #include <threedee/math.h>
 #include "threedee/draw.h"
 
-//void draw_tri(pbitmap map, int* zbuffer, vec2i t0, vec2i t1, vec2i t2, color_ptr col) {
-//    vec2i temp, a, b;
-//    int total_height, index, jndex, seg_height;
-//    char second_half;
-//    float alpha, beta;
-//
-//    if (t0.y > t1.y) {
-//        temp = t0;
-//        t0 = t1;
-//        t1 = temp;
-//    }
-//
-//    if (t0.y > t1.y) {
-//        temp = t0;
-//        t0 = t2;
-//        t2 = temp;
-//    }
-//
-//    if (t1.y > t2.y) {
-//        temp = t1;
-//        t1 = t2;
-//        t2 = temp;
-//    }
-//
-//    total_height = t2.y - t0.y;
-//
-//    for (index = 0; index < total_height; index++) {
-//        second_half = index > t1.y - t0.y || t1.y == t0.y;
-//        seg_height = second_half ? t2.y - t1.y : t1.y - t0.y;
-//        alpha = (float) index / total_height;
-//        beta = (float) (index - (second_half ? t1.y - t0.y : 0)) / seg_height;
-//        a = vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t2, t0), alpha));
-//        b = second_half ?
-//            vec2i_vec2i_add(t1, vec2i_float_mult(vec2i_vec2i_sub(t2, t1), beta)) :
-//            vec2i_vec2i_add(t0, vec2i_float_mult(vec2i_vec2i_sub(t1, t0), beta));
-//
-//        if (a.x > b.x) {
-//            temp = a;
-//            a = b;
-//            b = temp;
-//        }
-//
-//        for (jndex = a.x; jndex <= b.x; jndex++) {
-//            set(map, jndex, t0.y + index, col);
-//        }
-//    }
-//}
-
 void draw_tri(pbitmap map, float* zbuffer, vec3f t0, vec3f t1, vec3f t2, color_ptr col) {
     vec3f p, bc_screen;
     vec2f bboxmin, bboxmax, clamp;
@@ -85,6 +37,7 @@ void draw_tri(pbitmap map, float* zbuffer, vec3f t0, vec3f t1, vec3f t2, color_p
             if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
                 continue;
 
+            p.z = 0;
             p.z += t0.z * bc_screen.array[0];
             p.z += t1.z * bc_screen.array[1];
             p.z += t2.z * bc_screen.array[2];

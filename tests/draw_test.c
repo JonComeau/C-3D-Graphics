@@ -155,7 +155,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
             projection.m[2][3] = 1.0f;
 
-            read_obj(&obj, "..\\res\\teapot.obj");
+            read_obj(&obj, "..\\res\\african_head.obj");
 
             //SetTimer(hwnd, 1, 20, NULL);
             break;
@@ -209,11 +209,11 @@ void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
     vec3f n, world_coords[3], screen_coords[3];
     float intensity;
 
-    LIGHT_DIR = (vec3f){0, 0, -1};
+    LIGHT_DIR = (vec3f){0, 0, 1};
 
-    rotate_obj(&obj, 0, 0, 5);
-    //trans_obj(&obj, 1, 0, 0);
-    //scale_obj(&obj, .95f, .95f, .95f);
+//    rotate_obj(&obj, 1, 0, 0);
+//    trans_obj(&obj, 1, 0, 0);
+//    scale_obj(&obj, .95f, .95f, .95f);
 
     for (index = 0; index < obj.face_count; index++) {
         face = &obj.faces[index];
@@ -236,7 +236,7 @@ void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
                                (unsigned char) (intensity * 255),
                                (unsigned char) (intensity * 255), 255});
         }
-        if (intensity < 0.f) printf("intensity: %f, face: %i\n", intensity, index);
+        if (intensity <= 0.f) printf("intensity: %f, face: %i\n", intensity, index);
     }
 
     // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
@@ -370,7 +370,7 @@ char read_obj(object_ptr obj, const char *filename) {
         obj->verts[i].z /= fabsf(max);
     }
 
-    print_obj(*obj);
+//    print_obj(*obj);
 
     fclose(fp);
 
