@@ -155,9 +155,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             projection.m[3][2] = (-f_far * f_near) / (f_far - f_near);
             projection.m[2][3] = 1.0f;
 
-            read_obj(&obj, "..\\res\\test.obj");
-
-            print_obj(obj);
+            read_obj(&obj, "..\\res\\teapot.obj");
 
             //SetTimer(hwnd, 1, 20, NULL);
             break;
@@ -179,7 +177,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
             for (index = width * height; index--; zbuffer[index] = -FLT_MAX);
 
-            flip_vert(&bitmp);
             hdcMem = CreateCompatibleDC(hdc);
             hdc = BeginPaint(hwnd, &ps);
 
@@ -214,7 +211,7 @@ void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
 
     LIGHT_DIR = (vec3f){0, 0, -1};
 
-    //rotate_obj(&obj, 0, 0, 0);
+    rotate_obj(&obj, 0, 0, 5);
     //trans_obj(&obj, 1, 0, 0);
     //scale_obj(&obj, .95f, .95f, .95f);
 
@@ -222,7 +219,10 @@ void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
         face = &obj.faces[index];
         for (jndex = 0; jndex < 3; jndex++) {
             vec = &obj.verts[face->v[jndex]];
-            screen_coords[jndex] = (vec3f) {(int)(vec->x * width / 2 + .5), (int)(vec->y * height / 2 + .5), vec->z};
+            screen_coords[jndex] = (vec3f) {
+                    (int) ((vec->x + 1.f) * width / 2 + .5),
+                    (int) ((vec->y + 1.f) * height / 2 + .5),
+                    vec->z};
             world_coords[jndex] = *vec;
         }
         n = vec3f_vec3f_cross(
@@ -232,10 +232,11 @@ void render(HWND hwnd, HDC hdc, HDC hdcMem, bitmap* bitmp,
         intensity = fabsf(vec3f_vec3f_mult(n, LIGHT_DIR));
         if (intensity > 0.f) {
             draw_tri(bitmp, zbuffer, screen_coords[0], screen_coords[1], screen_coords[2],
-                     &(color){(unsigned char) (intensity * 255),
-                              (unsigned char) (intensity * 255),
-                              (unsigned char) (intensity * 255), 255});
+                     &(color) {(unsigned char) (intensity * 255),
+                               (unsigned char) (intensity * 255),
+                               (unsigned char) (intensity * 255), 255});
         }
+        if (intensity < 0.f) printf("intensity: %f, face: %i\n", intensity, index);
     }
 
     // (Bitmap type, Width in pixels, Scan lines/Height in Pixels, Byte width, Color Plane Count, Bits per pixel)
@@ -333,7 +334,6 @@ char read_obj(object_ptr obj, const char *filename) {
                 max = obj->verts[v_index].y;
             temp = strtok(NULL, " ");
             obj->verts[v_index].z = atof(temp);
-            printf("vert:%i ")
             if (fabsf(obj->verts[v_index].z) > fabsf(max))
                 max = obj->verts[v_index].z;
             v_index++;
@@ -369,6 +369,8 @@ char read_obj(object_ptr obj, const char *filename) {
         obj->verts[i].y /= -fabsf(max);
         obj->verts[i].z /= fabsf(max);
     }
+
+    print_obj(*obj);
 
     fclose(fp);
 

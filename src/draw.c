@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+#include <stdio.h>
 #include <threedee/ops.h>
 #include <threedee/math.h>
 #include "threedee/draw.h"
@@ -77,8 +78,8 @@ void draw_tri(pbitmap map, float* zbuffer, vec3f t0, vec3f t1, vec3f t2, color_p
 
     p = (vec3f){0, 0, 0};
 
-    for (p.x = bboxmin.x; p.x <= bboxmin.x; p.x++) {
-        for (p.y = bboxmin.y; p.y <= bboxmin.y; p.y++) {
+    for (p.x = bboxmin.x; p.x <= bboxmax.x; p.x++) {
+        for (p.y = bboxmin.y; p.y <= bboxmax.y; p.y++) {
             bc_screen = barycentric(t0, t1, t2, p);
 
             if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
